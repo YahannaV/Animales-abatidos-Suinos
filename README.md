@@ -1,85 +1,39 @@
-# Animales-abatidos-Suinos
-El algoritmo procesa datos de animales abatidos en Brasil, filtrando la información del estado del archivo "Pará". Limpia, organiza y convierte los datos, calcula los totales anuales y exporta los resultados a un archivo Excel. Incluye un diagrama de flujo elaborado aparte para representar el proceso.
+# Procesamiento de Datos de Abate de Animales - Estado de Pará
 
-import pandas as pd
-import re
+Este proyecto contiene un script en Python diseñado para **limpiar, filtrar y agregar** datos de animales abatidos de archivos Excel, centrándose exclusivamente en la información del estado de **Pará**. El resultado es exportado a un archivo Excel consolidado por año.
 
-def procesar_archivo_excel(ruta_archivo):
-    """
-    Procesa un archivo Excel con datos de animales abatidos para limpiar,
-    filtrar por el estado de Pará y agregar los datos por año.
-    Exporta el resultado final a un archivo Excel.
-    """
-    try:
-        # --- Lectura del archivo Excel ---
-        df = pd.read_excel(ruta_archivo, header=3, skipfooter=1)
+---
 
-        # Renombrar primera columna
-        nombre_columna_original = df.columns[0]
-        df.rename(columns={nombre_columna_original: 'Unidade da Federação'}, inplace=True)
+## Flujo de Trabajo del Algoritmo 🔄
 
-        # Rellenar celdas combinadas
-        df['Unidade da Federação'] = df['Unidade da Federação'].ffill()
-
-        # Eliminar columna "Tipo de inspeção"
-        if 'Unnamed: 1' in df.columns:
-            df = df.drop(columns=['Unnamed: 1'])
-        elif 'Tipo de inspeção' in df.columns:
-            df = df.drop(columns=['Tipo de inspeção'])
-
-        # Filtrar datos para el estado de Pará
-        df_para = df[df['Unidade da Federação'].str.contains('Pará', na=False)].copy()
-
-        if df_para.empty:
-            print("Error: No se encontraron datos para el estado de 'Pará'.")
-            return None
-
-        # Limpiar datos
-        columnas_datos = df_para.columns[1:]
-        for col in columnas_datos:
-            df_para[col] = pd.to_numeric(df_para[col], errors='coerce').fillna(0)
-
-        # Extraer años
-        años = sorted(list(set(re.findall(r'(\d{4})', ' '.join(map(str, columnas_datos))))))
-        if not años:
-            return pd.DataFrame(columns=['Año', 'Total Abatidos en Pará'])
-
-        # Sumar por año
-        resultados_anuales = {}
-        for año in años:
-            columnas_año = [col for col in columnas_datos if str(año) in str(col)]
-            total_anual = df_para[columnas_año].sum(axis=1).iloc[0]
-            resultados_anuales[año] = total_anual
-
-        # Crear DataFrame final
-        df_resultados = pd.DataFrame(
-            list(resultados_anuales.items()),
-            columns=['Año', 'Total Abatidos en Pará']
-        )
-
-        # --- Exportar resultado a Excel ---
-        nombre_salida = "resultados_pará.xlsx"
-        df_resultados.to_excel(nombre_salida, index=False)
-        print(f"\n✅ Resultado exportado correctamente a '{nombre_salida}'")
-
-        return df_resultados
-
-    except FileNotFoundError:
-        print(f"Error: No se encontró el archivo '{ruta_archivo}'.")
-        return None
-    except Exception as e:
-        print(f"Ocurrió un error inesperado: {e}")
-        return None
+El siguiente diagrama de flujo ilustra los pasos principales y la lógica secuencial de la función `procesar_archivo_excel`:
 
 
-if __name__ == "__main__":
-    # Coloca el nombre de tu archivo original aquí
-    nombre_archivo_excel = "tabela1093.xlsx"
-    resultados_para = procesar_archivo_excel(nombre_archivo_excel)
 
-    if resultados_para is not None and not resultados_para.empty:
-        print("\nTotales anuales de animales abatidos en el estado de Pará:")
-        print(resultados_para.to_string(index=False))
-    else:
-        print("\nEl resultado está vacío o ocurrió un error.")
+---
 
+## Funcionalidades Principales ✨
+
+El script realiza las siguientes operaciones clave:
+
+1.  **Lectura Robusta:** Lee el archivo Excel de entrada, saltando las filas de cabecera y pie de página irrelevantes (`header=3`, `skipfooter=1`).
+2.  **Preparación de Datos:**
+    * **Renombra** la primera columna a `'Unidade da Federação'`.
+    * **Rellena** celdas combinadas en la columna de federación (`ffill()`).
+    * **Elimina** columnas de inspección (`'Unnamed: 1'` o `'Tipo de inspeção'`).
+3.  **Filtrado Geográfico:** Filtra el DataFrame para retener únicamente las filas donde la unidad de federación contenga la palabra **'Pará'**.
+4.  **Limpieza Numérica:** Convierte todas las columnas de datos a valores **numéricos**, reemplazando errores con `0`.
+5.  **Agregación Anual:**
+    * **Extrae** los años (`\d{4}`) de los nombres de las columnas.
+    * **Suma** los totales de abate para todas las columnas que pertenecen a un mismo año.
+6.  **Exportación Final:** Genera un DataFrame final (`Año`, `Total Abatidos en Pará`) y lo exporta a **`resultados_pará.xlsx`**.
+7.  **Manejo de Errores:** Incluye bloques `try/except` para gestionar la ausencia del archivo de entrada (`FileNotFoundError`) y otros errores inesperados.
+
+---
+
+## Requisitos
+
+Para ejecutar este script, necesitas **Python** y las siguientes librerías:
+
+```bash
+pip install pandas
